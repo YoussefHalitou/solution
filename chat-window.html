@@ -75,10 +75,9 @@
     .message {
       display: flex;
       margin-bottom: 15px;
-      align-items: flex-start;
     }
     .user-message {
-      flex-direction: row-reverse;
+      justify-content: flex-end;
     }
     .avatar {
       width: 40px;
@@ -87,8 +86,8 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      margin: 0 10px;
-      background: #e0e0e0;
+      background-color: #e0e0e0;
+      margin-right: 10px;
     }
     .bot-avatar {
       width: 100%;
@@ -97,29 +96,28 @@
     }
     .message-content {
       max-width: 70%;
-      background: white;
-      padding: 10px;
-      border-radius: 10px;
-      box-shadow: 0 1px 2px rgba(0,0,0,0.1);
-    }
-    .user-message .message-content {
-      background: #34495E;
-      color: white;
+      display: flex;
+      flex-direction: column;
     }
     .message-text {
-      margin-bottom: 5px;
+      padding: 10px;
+      border-radius: 10px;
+      background-color: #fff;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    .user-message .message-text {
+      background-color: #34495E;
+      color: white;
     }
     .timestamp {
       font-size: 12px;
-      color: #666;
-    }
-    .user-message .timestamp {
-      color: #ccc;
+      color: #999;
+      margin-top: 5px;
     }
     .typing-indicator {
-      padding: 10px;
-      color: #666;
       font-style: italic;
+      color: #999;
+      margin-bottom: 15px;
     }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
@@ -140,13 +138,15 @@
   </div>
 
   <script>
-    const chatWindow = document.getElementById('chat-window');
+    var chatWindow = document.getElementById('chat-window');
 
+    // Function to safely render Markdown as HTML
     function renderMarkdown(text) {
       var rawHtml = marked.parse(text);
       return DOMPurify.sanitize(rawHtml);
     }
 
+    // Function to add a message with an avatar and timestamp
     function addMessage(text, sender) {
       var messageContainer = document.createElement('div');
       messageContainer.classList.add('message');
@@ -189,14 +189,18 @@
       chatWindow.scrollTop = chatWindow.scrollHeight;
     }
 
+    // Event listener for the close button
     document.getElementById('close-button').addEventListener('click', function() {
+      // Send a message to the parent window to close the iframe
       window.parent.postMessage('close-chat-window', '*');
     });
 
+    // Event listener for the clear button
     document.getElementById('clear-button').addEventListener('click', function() {
       chatWindow.innerHTML = '';
     });
 
+    // Event listener for the send button
     document.getElementById('send-button').addEventListener('click', function() {
       var message = document.getElementById('user-input').value.trim();
       if (message !== '') {
@@ -205,6 +209,7 @@
       }
     });
 
+    // Event listener for the input field
     document.getElementById('user-input').addEventListener('keydown', function(event) {
       if (event.key === 'Enter') {
         var message = document.getElementById('user-input').value.trim();
@@ -215,33 +220,30 @@
       }
     });
 
+    // Asynchronous function to send a message to your backend API
     async function sendMessage(message) {
-      try {
-        addMessage(message, 'user');
-        showTypingIndicator();
+      addMessage(message, 'user');
+      showTypingIndicator();
 
-        const apiUrl = 'https://chatbotpiedi-561735337199.herokuapp.com/api/chat';
-        const response = await fetch(apiUrl, {
+      var apiUrl = 'https://chatbotpiedi-561735337199.herokuapp.com/api/chat';
+      try {
+        var response = await fetch(apiUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ message: message })
         });
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
         await new Promise(resolve => setTimeout(resolve, 1000));
-        const data = await response.json();
+        var data = await response.json();
         removeTypingIndicator();
         addMessage(data.message, 'bot');
       } catch (error) {
         console.error('Error:', error);
         removeTypingIndicator();
-        addMessage('Entschuldigung, es ist ein Fehler aufgetreten!', 'bot');
+        addMessage('Sorry, something went wrong!', 'bot');
       }
     }
 
+    // Functions to manage the typing indicator
     var typingIndicator;
     function showTypingIndicator() {
       typingIndicator = document.createElement('div');
@@ -250,7 +252,6 @@
       chatWindow.appendChild(typingIndicator);
       chatWindow.scrollTop = chatWindow.scrollHeight;
     }
-    
     function removeTypingIndicator() {
       if (typingIndicator) {
         chatWindow.removeChild(typingIndicator);
