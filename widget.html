@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Chatbot Widget</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background: transparent;
+    }
+    #chat-launcher {
+      width: auto;
+      height: 60px;
+      padding: 0 20px;
+      border-radius: 30px;
+      background: linear-gradient(135deg, #2C3E50, #34495E);
+      color: white;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      cursor: pointer;
+      font-size: 16px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      transition: all 0.3s ease;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+      100% { transform: scale(1); }
+    }
+  </style>
+</head>
+<body>
+  <div id="chatbot-widget-container" style="position: fixed; bottom: 20px; right: 20px; z-index: 9999;">
+    <div id="chat-launcher">Stellt hier eure Fragen!</div>
+  </div>
+
+  <script>
+    document.getElementById('chat-launcher').addEventListener('click', function() {
+      var iframe = document.createElement('iframe');
+      iframe.src = 'chat-window.html';
+      iframe.style.position = 'fixed';
+      iframe.style.bottom = '90px';
+      iframe.style.right = '20px';
+      iframe.style.width = '380px';
+      iframe.style.height = '520px';
+      iframe.style.border = 'none';
+      iframe.style.zIndex = '9998';
+      document.body.appendChild(iframe);
+
+      // Hide the launcher button
+      this.style.display = 'none';
+    });
+
+    // Listen for messages from the iframe
+    window.addEventListener('message', function(event) {
+      if (event.data === 'close-chat-window') {
+        // Remove the iframe
+        var iframe = document.querySelector('iframe');
+        if (iframe) {
+          document.body.removeChild(iframe);
+        }
+        // Show the widget button
+        document.getElementById('chat-launcher').style.display = 'flex';
+      }
+    });
+  </script>
+</body>
+</html>

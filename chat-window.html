@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Chat Window</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background: transparent;
+    }
+    #chat-container {
+      width: 380px;
+      height: 520px;
+      border-radius: 15px;
+      background: #fff;
+      box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    #chat-header {
+      background: linear-gradient(135deg, #2C3E50, #34495E);
+      color: white;
+      padding: 15px;
+      text-align: center;
+      font-size: 20px;
+      font-weight: 500;
+      position: relative;
+    }
+    #clear-button, #close-button {
+      position: absolute;
+      top: 10px;
+      background: transparent;
+      border: none;
+      color: white;
+      font-size: 18px;
+      cursor: pointer;
+    }
+    #clear-button {
+      right: 45px;
+    }
+    #close-button {
+      right: 15px;
+    }
+    #chat-window {
+      flex: 1;
+      background: #f5f5f5;
+      padding: 15px;
+      overflow-y: auto;
+    }
+    #input-container {
+      display: flex;
+      border-top: 1px solid #ddd;
+      padding: 10px;
+      background: #fff;
+    }
+    #user-input {
+      flex: 1;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      font-size: 14px;
+    }
+    #send-button {
+      margin-left: 10px;
+      padding: 10px 15px;
+      background: #34495E;
+      border: none;
+      border-radius: 5px;
+      color: #fff;
+      cursor: pointer;
+      font-size: 14px;
+    }
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dompurify/dist/purify.min.js"></script>
+</head>
+<body>
+  <div id="chat-container">
+    <div id="chat-header">
+      Peter de Buhr
+      <button id="clear-button">🔄</button>
+      <button id="close-button">&times;</button>
+    </div>
+    <div id="chat-window"></div>
+    <div id="input-container">
+      <input type="text" id="user-input" placeholder="Hier könnt ihr eure Fragen stellen..." autofocus />
+      <button id="send-button">Senden</button>
+    </div>
+  </div>
+
+  <script>
+    // Function to safely render Markdown as HTML
+    function renderMarkdown(text) {
+      var rawHtml = marked.parse(text);
+      return DOMPurify.sanitize(rawHtml);
+    }
+
+    // Function to add a message with an avatar and timestamp
+    function addMessage(text, sender) {
+      var messageContainer = document.createElement('div');
+      messageContainer.classList.add('message');
+      if (sender === 'user') {
+        messageContainer.classList.add('user-message');
+      }
+
+      var avatar = document.createElement('div');
+      avatar.classList.add('avatar');
+
+      if (sender === 'user') {
+        avatar.textContent = '🙋‍♂️';
+      } else {
+        var botImage = document.createElement('img');
+        botImage.src = 'bot-avatar.PNG';
+        botImage.alt = 'Bot Avatar';
+        botImage.classList.add('bot-avatar');
+        avatar.appendChild(botImage);
+      }
+
+      var content = document.createElement('div');
+      content.classList.add('message-content');
+
+      var textElem = document.createElement('div');
+      textElem.classList.add('message-text');
+      textElem.innerHTML = renderMarkdown(text);
+
+      var timestamp = document.createElement('div');
+      timestamp.classList.add('timestamp');
+      var now = new Date();
+      var hours = now.getHours().toString().padStart(2, '0');
+      var minutes = now.getMinutes().toString().padStart(2, '0');
+      timestamp.textContent = hours + ':' + minutes;
+
+      content.appendChild(textElem);
+      content.appendChild(timestamp);
+      messageContainer.appendChild(avatar);
+      messageContainer.appendChild(content);
+      chatWindow.appendChild(messageContainer);
+      chatWindow.scrollTop = chatWindow.scrollHeight;
+    }
+
+    // Event listener for the close button
+    document.getElementById('close-button').addEventListener('click', function() {
+      // Send a message to the parent window to close the iframe
+      window.parent.postMessage('close-chat-window', '*');
+    });
+
+    // Event listener for the clear button
+    document.getElementById('clear-button').addEventListener('click', function() {
+      chatWindow.innerHTML = '';
+    });
+
+    // Event listener for the send button
+    document.getElementById('send-button').addEventListener('click', function() {
+      var message = document.getElementById('user-input').value.trim();
+      if (message !== '') {
+        sendMessage(message);
+        document.getElementById('user-input').value = '';
+      }
+    });
+
+    // Event listener for the input field
+    document.getElementById('user-input').addEventListener('keydown', function(event) {
+      if (event.key === 'Enter') {
+        var message = document.getElementById('user-input').value.trim();
+        if (message !== '') {
+          sendMessage(message);
+          document.getElementById('user-input').value = '';
+        }
+      }
+    });
+
+    // Asynchronous function to send a message to your backend API
+    async function sendMessage(message) {
+      addMessage(message, 'user');
+      showTypingIndicator();
+
+      var apiUrl = 'https://chatbotpiedi-561735337199.herokuapp.com/api/chat';
+      try {
+        var response = await fetch(apiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: message })
+        });
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        var data = await response.json();
+        removeTypingIndicator();
+        addMessage(data.message, 'bot');
+      } catch (error) {
+        console.error('Error:', error);
+        removeTypingIndicator();
+        addMessage('Sorry, something went wrong!', 'bot');
+      }
+    }
+
+    // Functions to manage the typing indicator
+    var typingIndicator;
+    function showTypingIndicator() {
+      typingIndicator = document.createElement('div');
+      typingIndicator.classList.add('typing-indicator');
+      typingIndicator.textContent = 'Peter de Buhr antwortet...';
+      chatWindow.appendChild(typingIndicator);
+      chatWindow.scrollTop = chatWindow.scrollHeight;
+    }
+    function removeTypingIndicator() {
+      if (typingIndicator) {
+        chatWindow.removeChild(typingIndicator);
+        typingIndicator = null;
+      }
+    }
+  </script>
+</body>
+</html>
