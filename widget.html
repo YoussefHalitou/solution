@@ -50,19 +50,15 @@
       iframe.style.zIndex = '9998';
       document.body.appendChild(iframe);
 
-      // Hide the launcher button
       this.style.display = 'none';
     });
 
-    // Listen for messages from the iframe
     window.addEventListener('message', function(event) {
       if (event.data === 'close-chat-window') {
-        // Remove the iframe
         var iframe = document.querySelector('iframe');
         if (iframe) {
           document.body.removeChild(iframe);
         }
-        // Show the widget button
         document.getElementById('chat-launcher').style.display = 'flex';
       }
     });
