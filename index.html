@@ -38,32 +38,46 @@
   </div>
 
   <script>
-    document.getElementById('chat-launcher').addEventListener('click', function() {
-      var iframe = document.createElement('iframe');
-      iframe.src = 'chat-window.html';
-      iframe.style.position = 'fixed';
-      iframe.style.bottom = '90px';
-      iframe.style.right = '20px';
-      iframe.style.width = '380px';
-      iframe.style.height = '520px';
-      iframe.style.border = 'none';
-      iframe.style.zIndex = '9998';
-      document.body.appendChild(iframe);
+    // Global reference to the iframe
+    let chatIframe = null;
 
-      // Hide the launcher button
-      this.style.display = 'none';
+    document.getElementById('chat-launcher').addEventListener('click', function() {
+      // Only create a new iframe if one doesn't exist
+      if (!chatIframe) {
+        chatIframe = document.createElement('iframe');
+        chatIframe.src = 'chat-window.html';
+        chatIframe.style.position = 'fixed';
+        chatIframe.style.bottom = '90px';
+        chatIframe.style.right = '20px';
+        chatIframe.style.width = '380px';
+        chatIframe.style.height = '520px';
+        chatIframe.style.border = 'none';
+        chatIframe.style.zIndex = '9998';
+        document.body.appendChild(chatIframe);
+
+        // Hide the launcher button
+        this.style.display = 'none';
+      }
     });
 
     // Listen for messages from the iframe
     window.addEventListener('message', function(event) {
       if (event.data === 'close-chat-window') {
-        // Remove the iframe
-        var iframe = document.querySelector('iframe');
-        if (iframe) {
-          document.body.removeChild(iframe);
+        // Remove the iframe if it exists
+        if (chatIframe) {
+          document.body.removeChild(chatIframe);
+          chatIframe = null; // Clear the reference
         }
         // Show the launcher button
         document.getElementById('chat-launcher').style.display = 'flex';
+      }
+    });
+
+    // Optional: Clean up on page unload
+    window.addEventListener('unload', function() {
+      if (chatIframe) {
+        document.body.removeChild(chatIframe);
+        chatIframe = null;
       }
     });
   </script>
